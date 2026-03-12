@@ -1,5 +1,6 @@
 class Numpuz {
     constructor() {
+        console.log("Iniciando Numpuz...");
         this.gridElement = document.getElementById('puzzle-grid');
         this.moveElement = document.getElementById('move-count');
         this.timerElement = document.getElementById('timer');
@@ -21,8 +22,11 @@ class Numpuz {
     init() {
         // Difficulty buttons
         const diffButtons = document.querySelectorAll('.diff-btn');
+        console.log("Botões de dificuldade encontrados:", diffButtons.length);
+        
         diffButtons.forEach(btn => {
             btn.addEventListener('click', () => {
+                console.log("Mudando dificuldade para:", btn.dataset.size);
                 diffButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.size = parseInt(btn.dataset.size);
@@ -30,17 +34,24 @@ class Numpuz {
             });
         });
 
-        this.restartBtn.addEventListener('click', () => this.resetGame());
+        if (this.restartBtn) {
+            this.restartBtn.addEventListener('click', () => this.resetGame());
+        }
+        
         this.resetGame();
     }
 
     resetGame() {
+        console.log("Resetando jogo. Tamanho:", this.size);
         if (this.timerInterval) clearInterval(this.timerInterval);
         this.moves = 0;
         this.timer = 0;
         this.isGameActive = true;
         this.updateStats();
-        this.gameOverElement.classList.add('hidden');
+        
+        if (this.gameOverElement) {
+            this.gameOverElement.classList.add('hidden');
+        }
         
         this.createBoard();
         this.shuffleBoard();
@@ -54,12 +65,10 @@ class Numpuz {
         for (let i = 1; i < totalTiles; i++) {
             this.tiles.push(i);
         }
-        this.tiles.push(null); // Empty space
+        this.tiles.push(null); // Espaço vazio
     }
 
     shuffleBoard() {
-        // To guarantee solvability, we simulate random valid moves
-        // instead of a truly random shuffle.
         let emptyIndex = this.tiles.indexOf(null);
         const iterations = this.size * this.size * 50;
 
@@ -67,7 +76,6 @@ class Numpuz {
             const neighbors = this.getNeighbors(emptyIndex);
             const moveIndex = neighbors[Math.floor(Math.random() * neighbors.length)];
             
-            // Swap
             [this.tiles[emptyIndex], this.tiles[moveIndex]] = [this.tiles[moveIndex], this.tiles[emptyIndex]];
             emptyIndex = moveIndex;
         }
@@ -78,36 +86,45 @@ class Numpuz {
         const row = Math.floor(index / this.size);
         const col = index % this.size;
 
-        if (row > 0) neighbors.push(index - this.size); // Up
-        if (row < this.size - 1) neighbors.push(index + this.size); // Down
-        if (col > 0) neighbors.push(index - 1); // Left
-        if (col < this.size - 1) neighbors.push(index + 1); // Right
+        if (row > 0) neighbors.push(index - this.size); // Cima
+        if (row < this.size - 1) neighbors.push(index + this.size); // Baixo
+        if (col > 0) neighbors.push(index - 1); // Esquerda
+        if (col < this.size - 1) neighbors.push(index + 1); // Direita
 
         return neighbors;
     }
 
     renderBoard() {
-        if (!this.gridElement) return;
+        if (!this.gridElement) {
+            console.error("Erro: elemento puzzle-grid não encontrado!");
+            return;
+        }
+        
         this.gridElement.innerHTML = '';
+        
+        // Garante que o CSS inline seja aplicado para o grid
         this.gridElement.style.display = 'grid';
         this.gridElement.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
         this.gridElement.style.gridTemplateRows = `repeat(${this.size}, 1fr)`;
         this.gridElement.style.gap = '10px';
-        this.gridElement.style.width = '100%';
-        this.gridElement.style.height = '100%';
 
         this.tiles.forEach((value, index) => {
             const tile = document.createElement('div');
             tile.className = 'tile';
+            
             if (value === null) {
                 tile.classList.add('empty');
                 tile.textContent = '';
+                tile.style.visibility = 'hidden'; // Ocupa o espaço mas fica invisível
             } else {
                 tile.textContent = value;
+                tile.style.visibility = 'visible';
+                tile.style.display = 'flex'; // Garante que o número apareça centralizado
                 tile.addEventListener('click', () => this.handleTileClick(index));
             }
             this.gridElement.appendChild(tile);
         });
+        console.log("Board renderizado.");
     }
 
     handleTileClick(index) {
@@ -117,7 +134,6 @@ class Numpuz {
         const neighbors = this.getNeighbors(index);
 
         if (neighbors.includes(emptyIndex)) {
-            // Move tile
             [this.tiles[index], this.tiles[emptyIndex]] = [this.tiles[emptyIndex], this.tiles[index]];
             this.moves++;
             this.updateStats();
@@ -164,7 +180,11 @@ class Numpuz {
     }
 }
 
-// Start game
-document.addEventListener('DOMContentLoaded', () => {
+// Inicia o jogo ou quando o DOM estiver pronto ou agora se já estiver
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
     new Numpuz();
-});
+} else {
+    document.addEventListener('DOMContentLoaded', () => {
+        new Numpuz();
+    });
+}

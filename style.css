@@ -105,38 +105,35 @@ main {
 }
 
 .tile {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
     border: 1px solid var(--glass-border);
     border-radius: 8px;
-    display: flex;
+    display: flex !important; /* Força o flex para centralizar o texto */
     justify-content: center;
     align-items: center;
-    font-size: 1.8rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--text-color);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    min-height: 60px; /* Garante altura mínima */
 }
 
 .tile:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.25);
     transform: scale(1.02);
     border-color: var(--accent-color);
-    box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
 }
 
 .tile.empty {
-    background: transparent;
-    border: none;
+    background: transparent !important;
+    border: none !important;
     cursor: default;
-    box-shadow: none;
-}
-
-.tile.empty:hover {
-    transform: none;
-    box-shadow: none;
+    box-shadow: none !important;
+    visibility: hidden;
 }
 
 .difficulty-options {
