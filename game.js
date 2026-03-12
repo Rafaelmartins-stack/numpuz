@@ -1,5 +1,6 @@
 class Numpuz {
     constructor() {
+        console.log("Iniciando Numpuz 7x7...");
         this.gridElement = document.getElementById('puzzle-grid');
         this.moveElement = document.getElementById('move-count');
         this.timerElement = document.getElementById('timer');
@@ -10,7 +11,7 @@ class Numpuz {
         this.finalMovesElement = document.getElementById('final-moves');
         this.finalTimeElement = document.getElementById('final-time');
         
-        this.size = 3;
+        this.size = 7; // Agora 7x7
         this.tiles = [];
         this.moves = 0;
         this.timer = 0;
@@ -22,17 +23,12 @@ class Numpuz {
     }
 
     init() {
-        // Botão de Iniciar
         if (this.startBtn) {
             this.startBtn.addEventListener('click', () => this.startGame());
         }
-
-        // Botão de Reiniciar
         if (this.restartBtn) {
             this.restartBtn.addEventListener('click', () => this.startGame());
         }
-
-        // Evento de Tecla Enter
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 if (!this.gameStarted || !this.isGameActive) {
@@ -41,14 +37,12 @@ class Numpuz {
             }
         });
 
-        // Prepara o board visualmente mas não inicia o tempo
         this.createBoard();
         this.shuffleBoard();
         this.renderBoard();
     }
 
     startGame() {
-        console.log("Iniciando Jogo...");
         this.gameStarted = true;
         this.isGameActive = true;
         this.moves = 0;
@@ -77,7 +71,8 @@ class Numpuz {
 
     shuffleBoard() {
         let emptyIndex = this.tiles.indexOf(null);
-        const iterations = 100;
+        // Aumentando iterações para um grid 7x7
+        const iterations = 500; 
         for (let i = 0; i < iterations; i++) {
             const neighbors = this.getNeighbors(emptyIndex);
             const moveIndex = neighbors[Math.floor(Math.random() * neighbors.length)];
@@ -100,9 +95,15 @@ class Numpuz {
     renderBoard() {
         if (!this.gridElement) return;
         this.gridElement.innerHTML = '';
+        this.gridElement.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
+        this.gridElement.style.gridTemplateRows = `repeat(${this.size}, 1fr)`;
+        
         this.tiles.forEach((value, index) => {
             const tile = document.createElement('div');
             tile.className = 'tile';
+            // Ajuste de fonte para grid 7x7
+            tile.style.fontSize = '1.1rem'; 
+            
             if (value === null) {
                 tile.classList.add('empty');
             } else {
@@ -115,18 +116,13 @@ class Numpuz {
 
     handleTileClick(index) {
         if (!this.isGameActive) return;
-
         const emptyIndex = this.tiles.indexOf(null);
         const neighbors = this.getNeighbors(index);
-
         if (neighbors.includes(emptyIndex)) {
-            // "Empurrar" a peça clicada para o espaço vazio
             [this.tiles[index], this.tiles[emptyIndex]] = [this.tiles[emptyIndex], this.tiles[index]];
-            
             this.moves++;
             this.updateStats();
             this.renderBoard();
-
             if (this.checkWin()) {
                 this.endGame();
             }
@@ -134,8 +130,10 @@ class Numpuz {
     }
 
     checkWin() {
-        const winState = [1, 2, 3, 4, 5, 6, 7, 8, null];
-        return this.tiles.every((val, i) => val === winState[i]);
+        for (let i = 0; i < this.tiles.length - 1; i++) {
+            if (this.tiles[i] !== i + 1) return false;
+        }
+        return this.tiles[this.tiles.length - 1] === null;
     }
 
     updateStats() {
