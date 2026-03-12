@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GridStack 10x10 - Puzzle de Lógica</title>
+    <meta name="description" content="Um viciante puzzle de lógica 10x10 que mistura Tetris com estratégia de preenchimento de espaço.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-overlay"></div>
+    <div class="game-container">
+        <header>
+            <h1>GRIDSTACK <span class="accent">10x10</span></h1>
+        </header>
+
+        <main>
+            <div class="grid-wrapper">
+                <canvas id="gameCanvas" width="500" height="500"></canvas>
+                <div id="game-over" class="hidden">
+                    <div class="game-over-content">
+                        <h2>FIM DE JOGO</h2>
+                        <p>Pontuação Final: <span id="final-score">0</span></p>
+                        <button id="restart-btn">Jogar Novamente</button>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="sidebar">
+                <div class="stat-card">
+                    <h3>PONTUAÇÃO</h3>
+                    <div id="score" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>RECORDE</h3>
+                    <div id="high-score" class="stat-value">0</div>
+                </div>
+                <div class="stat-card next-piece-card">
+                    <h3>PRÓXIMA PEÇA</h3>
+                    <canvas id="nextCanvas" width="120" height="120"></canvas>
+                </div>
+                <div class="controls-hint">
+                    <p>⬅️ ➡️ Mover</p>
+                    <p>⬇️ Acelerar</p>
+                </div>
+            </aside>
+        </main>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
