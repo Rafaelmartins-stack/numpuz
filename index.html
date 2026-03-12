@@ -20,12 +20,23 @@
         <main>
             <div class="grid-wrapper">
                 <div id="puzzle-grid" class="puzzle-grid"></div>
-                <div id="game-over" class="hidden">
-                    <div class="game-over-content">
+                
+                <!-- Tela de Início -->
+                <div id="start-screen" class="overlay">
+                    <div class="overlay-content">
+                        <h2>NUMPUZ <span class="accent">PREMIER</span></h2>
+                        <p>Desafie seu raciocínio lógico</p>
+                        <button id="start-btn" class="primary-btn">INICIAR (ENTER)</button>
+                    </div>
+                </div>
+
+                <!-- Tela de Vitória -->
+                <div id="game-over" class="overlay hidden">
+                    <div class="overlay-content">
                         <h2>PARABÉNS!</h2>
                         <p>Você resolveu em <span id="final-moves">0</span> movimentos</p>
                         <p>Tempo: <span id="final-time">00:00</span></p>
-                        <button id="restart-btn">Jogar Novamente</button>
+                        <button id="restart-btn" class="primary-btn">Jogar Novamente</button>
                     </div>
                 </div>
             </div>
