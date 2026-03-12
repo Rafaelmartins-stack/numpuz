@@ -32,9 +32,9 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: url('/C:/Users/26012354/.gemini/antigravity/brain/898ac326-db3e-4f88-ab74-8730732b87bb/gridstack_background_1772731550130.png') no-repeat center center;
+    background: url('numpuz_bg_1773340239899.png') no-repeat center center;
     background-size: cover;
-    opacity: 0.3;
+    opacity: 0.4;
     z-index: -1;
 }
 
@@ -78,25 +78,93 @@ header .accent {
 }
 
 main {
-    display: grid;
-    grid-template-columns: 1fr 250px;
-    gap: 40px;
-}
-
-.grid-wrapper {
-    position: relative;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-    border: 2px solid var(--glass-border);
-    padding: 5px;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-canvas#gameCanvas {
-    display: block;
-    border-radius: 4px;
+.grid-wrapper {
+    position: relative;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 2px solid var(--glass-border);
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 440px;
+    height: 440px;
+}
+
+.puzzle-grid {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+}
+
+.tile {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tile:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.02);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+}
+
+.tile.empty {
+    background: transparent;
+    border: none;
+    cursor: default;
+    box-shadow: none;
+}
+
+.tile.empty:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.difficulty-options {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.diff-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    padding: 8px 15px;
+    border-radius: 20px;
+    color: #eee;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.diff-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-color);
+}
+
+.diff-btn.active {
+    background: var(--accent-color);
+    color: var(--bg-color);
+    font-weight: 700;
 }
 
 .sidebar {

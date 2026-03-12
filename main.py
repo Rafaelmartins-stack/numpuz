@@ -1,135 +1,91 @@
-import pygame
+import tkinter as tk
+from tkinter import messagebox
 import random
 
-# Inicialização e Cores
-pygame.font.init()
+class Numpuz:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Numpuz Premier")
+        self.size = 3
+        self.buttons = []
+        self.board: list[int | None] = []
+        self.empty_pos = (0, 0)
+        
+        self.grid_frame: tk.Frame | None = None
+        self.setup_menu()
+        self.init_game(3)
 
-# Configurações do Jogo
-COLUNAS, LINHAS = 15, 20
-TAMANHO_BLOCO = 30
-LARGURA_JOGO, ALTURA_JOGO = COLUNAS * TAMANHO_BLOCO, LINHAS * TAMANHO_BLOCO
-LARGURA_TELA, ALTURA_TELA = 800, 700
-X_INICIAL_JOGO = (LARGURA_TELA - LARGURA_JOGO) // 2
-Y_INICIAL_JOGO = (ALTURA_TELA - ALTURA_JOGO) // 2
+    def setup_menu(self):
+        menu_frame = tk.Frame(self.root)
+        menu_frame.pack(pady=10)
+        
+        options = [("3x3", 3), ("4x4", 4), ("5x5", 5), ("6x6", 6)]
+        for text, size in options:
+            btn = tk.Button(menu_frame, text=text, command=lambda s=size: self.init_game(s))
+            btn.pack(side=tk.LEFT, padx=5)
 
-CORES = [
-    (0, 0, 0), (0, 255, 255), (0, 0, 255), (255, 165, 0),
-    (255, 255, 0), (0, 255, 0), (128, 0, 128), (255, 0, 0)
-]
+    def init_game(self, size):
+        self.size = size
+        self.board = list(range(1, size**2)) + [None]
+        self.shuffle_board()
+        self.create_widgets()
 
-# Formatos das peças (S, Z, I, O, J, L, T)
-FORMATOS = [
-    [['.....', '.....', '..00.', '.00..', '.....'], ['.....', '..0..', '..00.', '...0.', '.....']], # S
-    [['.....', '.....', '.00..', '..00.', '.....'], ['.....', '...0.', '..00.', '..0..', '.....']], # Z
-    [['..0..', '..0..', '..0..', '..0..', '.....'], ['.....', '0000.', '.....', '.....', '.....']], # I
-    [['.....', '.....', '.00..', '.00..', '.....']], # O
-    [['.....', '.0...', '.000.', '.....', '.....'], ['.....', '..00.', '..0..', '..0..', '.....'], ['.....', '.....', '.000.', '...0.', '.....'], ['.....', '..0..', '..0..', '.00..', '.....']], # J
-    [['.....', '...0.', '.000.', '.....', '.....'], ['.....', '..0..', '..0..', '..00.', '.....'], ['.....', '.....', '.000.', '.0...', '.....'], ['.....', '.00..', '..0..', '..0..', '.....']], # L
-    [['.....', '..0..', '.000.', '.....', '.....'], ['.....', '..0..', '..00.', '..0..', '.....'], ['.....', '.....', '.000.', '..0..', '.....'], ['.....', '..0..', '.00..', '..0..', '.....']]  # T
-]
+    def shuffle_board(self):
+        # Para garantir que o puzzle seja resolvível, fazemos movimentos aleatórios
+        # a partir do estado resolvido em vez de um random.shuffle puro.
+        for _ in range(1000):
+            adj = self.get_adjacent(self.board.index(None))
+            move = random.choice(adj)
+            idx_none = self.board.index(None)
+            self.board[idx_none], self.board[move] = self.board[move], self.board[idx_none]
 
-class Peca:
-    def __init__(self, x, y, formato):
-        self.x = x
-        self.y = y
-        self.formato = formato
-        self.cor = CORES[FORMATOS.index(formato) + 1]
-        self.rotacao = 0
+    def get_adjacent(self, index):
+        adj = []
+        row, col = divmod(index, self.size)
+        if row > 0: adj.append(index - self.size) # Cima
+        if row < self.size - 1: adj.append(index + self.size) # Baixo
+        if col > 0: adj.append(index - 1) # Esquerda
+        if col < self.size - 1: adj.append(index + 1) # Direita
+        return adj
 
-def criar_grade(posicoes_travadas={}):
-    grade = [[(0,0,0) for _ in range(COLUNAS)] for _ in range(LINHAS)]
-    for y in range(len(grade)):
-        for x in range(len(grade[y])):
-            if (x, y) in posicoes_travadas:
-                grade[y][x] = posicoes_travadas[(x, y)]
-    return grade
+    def create_widgets(self):
+        if self.grid_frame:
+            self.grid_frame.destroy()
+            
+        self.grid_frame = tk.Frame(self.root)
+        self.grid_frame.pack(padx=20, pady=20)
+        self.buttons = []
+        
+        for i, val in enumerate(self.board):
+            row, col = divmod(i, self.size)
+            btn_text = str(val) if val is not None else ""
+            btn = tk.Button(self.grid_frame, text=btn_text, width=6, height=3,
+                           font=('Arial', 14, 'bold'),
+                           command=lambda idx=i: self.make_move(idx))
+            btn.grid(row=row, column=col, sticky="nsew")
+            if val is None:
+                btn.config(state="disabled", bg="lightgrey")
+            self.buttons.append(btn)
 
-def converter_formato_peca(peca):
-    posicoes = []
-    formato = peca.formato[peca.rotacao % len(peca.formato)]
-    for i, linha in enumerate(formato):
-        for j, coluna in enumerate(linha):
-            if coluna == '0':
-                posicoes.append((peca.x + j - 2, peca.y + i - 3))
-    return posicoes
+    def make_move(self, idx):
+        none_idx = self.board.index(None)
+        if idx in self.get_adjacent(none_idx):
+            self.board[none_idx], self.board[idx] = self.board[idx], self.board[none_idx]
+            self.update_buttons()
+            if self.check_win():
+                messagebox.showinfo("Parabéns!", "Você ordenou todos os números!")
 
-def espaco_livre(peca, grade):
-    pos_aceitaveis = [[(j, i) for j in range(COLUNAS) if grade[i][j] == (0,0,0)] for i in range(LINHAS)]
-    pos_aceitaveis = [j for sub in pos_aceitaveis for j in sub]
-    formatada = converter_formato_peca(peca)
-    for pos in formatada:
-        if pos not in pos_aceitaveis:
-            if pos[1] > -1: return False
-    return True
+    def update_buttons(self):
+        for i, val in enumerate(self.board):
+            btn_text = str(val) if val is not None else ""
+            self.buttons[i].config(text=btn_text, state="normal" if val else "disabled",
+                                 bg="white" if val else "lightgrey")
 
-def desenhar_janela(superficie, grade):
-    superficie.fill((0, 0, 0))
-    for i in range(len(grade)):
-        for j in range(len(grade[i])):
-            pygame.draw.rect(superficie, grade[i][j], (X_INICIAL_JOGO + j*TAMANHO_BLOCO, Y_INICIAL_JOGO + i*TAMANHO_BLOCO, TAMANHO_BLOCO, TAMANHO_BLOCO), 0)
-    pygame.draw.rect(superficie, (255, 0, 0), (X_INICIAL_JOGO, Y_INICIAL_JOGO, LARGURA_JOGO, ALTURA_JOGO), 4)
-
-def main():
-    posicoes_travadas = {}
-    grade = criar_grade(posicoes_travadas)
-    mudar_peca = False
-    rodando = True
-    peca_atual = Peca(COLUNAS // 2, 0, random.choice(FORMATOS))
-    proxima_peca = Peca(COLUNAS // 2, 0, random.choice(FORMATOS))
-    relogio = pygame.time.Clock()
-    tempo_queda = 0
-    velocidade_queda = 0.27
-
-    janela = pygame.display.set_mode((LARGURA_TELA, ALTURA_TELA))
-
-    while rodando:
-        grade = criar_grade(posicoes_travadas)
-        tempo_queda += relogio.get_rawtime()
-        relogio.tick()
-
-        if tempo_queda / 1000 >= velocidade_queda:
-            tempo_queda = 0
-            peca_atual.y += 1
-            if not (espaco_livre(peca_atual, grade)) and peca_atual.y > 0:
-                peca_atual.y -= 1
-                mudar_peca = True
-
-        for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
-                rodando = False
-            if evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_LEFT:
-                    peca_atual.x -= 1
-                    if not espaco_livre(peca_atual, grade): peca_atual.x += 1
-                if evento.key == pygame.K_RIGHT:
-                    peca_atual.x += 1
-                    if not espaco_livre(peca_atual, grade): peca_atual.x -= 1
-                if evento.key == pygame.K_DOWN:
-                    peca_atual.y += 1
-                    if not espaco_livre(peca_atual, grade): peca_atual.y -= 1
-                if evento.key == pygame.K_q: # Gira Esquerda
-                    peca_atual.rotacao -= 1
-                    if not espaco_livre(peca_atual, grade): peca_atual.rotacao += 1
-                if evento.key == pygame.K_e: # Gira Direita
-                    peca_atual.rotacao += 1
-                    if not espaco_livre(peca_atual, grade): peca_atual.rotacao -= 1
-
-        pos_peca = converter_formato_peca(peca_atual)
-        for i in range(len(pos_peca)):
-            x, y = pos_peca[i]
-            if y > -1: grade[y][x] = peca_atual.cor
-
-        if mudar_peca:
-            for pos in pos_peca:
-                posicoes_travadas[(pos[0], pos[1])] = peca_atual.cor
-            peca_atual = proxima_peca
-            proxima_peca = Peca(COLUNAS // 2, 0, random.choice(FORMATOS))
-            mudar_peca = False
-
-        desenhar_janela(janela, grade)
-        pygame.display.update()
-
-    pygame.display.quit()
+    def check_win(self):
+        correct_board = list(range(1, self.size**2)) + [None]
+        return self.board == correct_board
 
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    game = Numpuz(root)
+    root.mainloop()

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GridStack DYNAMIC - Puzzle de Lógica</title>
-    <meta name="description" content="Um viciante puzzle de lógica 10x10 que mistura Tetris com estratégia de preenchimento de espaço.">
+    <title>NUMPUZ PREMIER - Puzzle de Números</title>
+    <meta name="description" content="Um elegante puzzle de deslizar números para desafiar seu raciocínio lógico.">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,16 +14,17 @@
     <div class="background-overlay"></div>
     <div class="game-container">
         <header>
-            <h1>GRIDSTACK <span class="accent">DYNAMIC</span></h1>
+            <h1>NUMPUZ <span class="accent">PREMIER</span></h1>
         </header>
 
         <main>
             <div class="grid-wrapper">
-                <canvas id="gameCanvas" width="420" height="630"></canvas>
+                <div id="puzzle-grid" class="puzzle-grid"></div>
                 <div id="game-over" class="hidden">
                     <div class="game-over-content">
-                        <h2>FIM DE JOGO</h2>
-                        <p>Pontuação Final: <span id="final-score">0</span></p>
+                        <h2>PARABÉNS!</h2>
+                        <p>Você resolveu em <span id="final-moves">0</span> movimentos</p>
+                        <p>Tempo: <span id="final-time">00:00</span></p>
                         <button id="restart-btn">Jogar Novamente</button>
                     </div>
                 </div>
@@ -31,21 +32,24 @@
 
             <aside class="sidebar">
                 <div class="stat-card">
-                    <h3>PONTUAÇÃO</h3>
-                    <div id="score" class="stat-value">0</div>
+                    <h3>MOVIMENTOS</h3>
+                    <div id="move-count" class="stat-value">0</div>
                 </div>
                 <div class="stat-card">
-                    <h3>RECORDE</h3>
-                    <div id="high-score" class="stat-value">0</div>
+                    <h3>TEMPO</h3>
+                    <div id="timer" class="stat-value">00:00</div>
                 </div>
-                <div class="stat-card next-piece-card">
-                    <h3>PRÓXIMA PEÇA</h3>
-                    <canvas id="nextCanvas" width="120" height="120"></canvas>
+                <div class="stat-card difficulty-card">
+                    <h3>DIFICULDADE</h3>
+                    <div class="difficulty-options">
+                        <button class="diff-btn active" data-size="3">3x3</button>
+                        <button class="diff-btn" data-size="4">4x4</button>
+                        <button class="diff-btn" data-size="5">5x5</button>
+                    </div>
                 </div>
                 <div class="controls-hint">
-                    <p>⬅️ ➡️ Mover</p>
-                    <p>⬇️ Acelerar</p>
-                    <p><b>Q / E</b> Girar 90°</p>
+                    <p>Clique nas peças para deslizar.</p>
+                    <p>Ordene os números sequencialmente.</p>
                 </div>
             </aside>
         </main>
