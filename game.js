@@ -1,6 +1,6 @@
 class Numpuz {
     constructor() {
-        console.log("Iniciando Numpuz...");
+        console.log("Iniciando Numpuz 3x3...");
         this.gridElement = document.getElementById('puzzle-grid');
         this.moveElement = document.getElementById('move-count');
         this.timerElement = document.getElementById('timer');
@@ -9,7 +9,7 @@ class Numpuz {
         this.finalMovesElement = document.getElementById('final-moves');
         this.finalTimeElement = document.getElementById('final-time');
         
-        this.size = 3;
+        this.size = 3; // Fixo em 3x3
         this.tiles = [];
         this.moves = 0;
         this.timer = 0;
@@ -20,29 +20,13 @@ class Numpuz {
     }
 
     init() {
-        // Difficulty buttons
-        const diffButtons = document.querySelectorAll('.diff-btn');
-        console.log("Botões de dificuldade encontrados:", diffButtons.length);
-        
-        diffButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                console.log("Mudando dificuldade para:", btn.dataset.size);
-                diffButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                this.size = parseInt(btn.dataset.size);
-                this.resetGame();
-            });
-        });
-
         if (this.restartBtn) {
             this.restartBtn.addEventListener('click', () => this.resetGame());
         }
-        
         this.resetGame();
     }
 
     resetGame() {
-        console.log("Resetando jogo. Tamanho:", this.size);
         if (this.timerInterval) clearInterval(this.timerInterval);
         this.moves = 0;
         this.timer = 0;
@@ -70,12 +54,13 @@ class Numpuz {
 
     shuffleBoard() {
         let emptyIndex = this.tiles.indexOf(null);
-        const iterations = this.size * this.size * 50;
+        const iterations = 100; // Embaralha o suficiente para ser desafiador mas resolvível
 
         for (let i = 0; i < iterations; i++) {
             const neighbors = this.getNeighbors(emptyIndex);
             const moveIndex = neighbors[Math.floor(Math.random() * neighbors.length)];
             
+            // Troca física para garantir que o puzzle seja montável
             [this.tiles[emptyIndex], this.tiles[moveIndex]] = [this.tiles[moveIndex], this.tiles[emptyIndex]];
             emptyIndex = moveIndex;
         }
@@ -95,14 +80,9 @@ class Numpuz {
     }
 
     renderBoard() {
-        if (!this.gridElement) {
-            console.error("Erro: elemento puzzle-grid não encontrado!");
-            return;
-        }
+        if (!this.gridElement) return;
         
         this.gridElement.innerHTML = '';
-        
-        // Garante que o CSS inline seja aplicado para o grid
         this.gridElement.style.display = 'grid';
         this.gridElement.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
         this.gridElement.style.gridTemplateRows = `repeat(${this.size}, 1fr)`;
@@ -115,16 +95,16 @@ class Numpuz {
             if (value === null) {
                 tile.classList.add('empty');
                 tile.textContent = '';
-                tile.style.visibility = 'hidden'; // Ocupa o espaço mas fica invisível
+                // O espaço vazio não recebe evento de clique
             } else {
                 tile.textContent = value;
-                tile.style.visibility = 'visible';
-                tile.style.display = 'flex'; // Garante que o número apareça centralizado
+                // Clique para mover
                 tile.addEventListener('click', () => this.handleTileClick(index));
+                // Estilo para indicar que é clicável
+                tile.style.cursor = 'pointer';
             }
             this.gridElement.appendChild(tile);
         });
-        console.log("Board renderizado.");
     }
 
     handleTileClick(index) {
@@ -133,8 +113,13 @@ class Numpuz {
         const emptyIndex = this.tiles.indexOf(null);
         const neighbors = this.getNeighbors(index);
 
+        // Se o espaço vazio estiver entre os vizinhos da peça clicada
         if (neighbors.includes(emptyIndex)) {
+            console.log(`Movendo peça ${this.tiles[index]} para o espaço vazio`);
+            
+            // Realiza a troca (Move a peça para a casa ao lado vazia)
             [this.tiles[index], this.tiles[emptyIndex]] = [this.tiles[emptyIndex], this.tiles[index]];
+            
             this.moves++;
             this.updateStats();
             this.renderBoard();
@@ -142,22 +127,22 @@ class Numpuz {
             if (this.checkWin()) {
                 this.endGame();
             }
+        } else {
+            console.log("Peça não está ao lado do espaço vazio.");
         }
     }
 
     checkWin() {
-        for (let i = 0; i < this.tiles.length - 1; i++) {
-            if (this.tiles[i] !== i + 1) return false;
-        }
-        return this.tiles[this.tiles.length - 1] === null;
+        const winState = [1, 2, 3, 4, 5, 6, 7, 8, null];
+        return this.tiles.every((val, i) => val === winState[i]);
     }
 
     updateStats() {
         if (this.moveElement) this.moveElement.textContent = this.moves;
         if (this.timerElement) {
-            const mins = Math.floor(this.timer / 60);
-            const secs = this.timer % 60;
-            this.timerElement.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            const mins = Math.floor(this.timer / 60).toString().padStart(2, '0');
+            const secs = (this.timer % 60).toString().padStart(2, '0');
+            this.timerElement.textContent = `${mins}:${secs}`;
         }
     }
 
@@ -173,18 +158,13 @@ class Numpuz {
     endGame() {
         this.isGameActive = false;
         clearInterval(this.timerInterval);
-        
         if (this.finalMovesElement) this.finalMovesElement.textContent = this.moves;
         if (this.finalTimeElement) this.finalTimeElement.textContent = this.timerElement.textContent;
         if (this.gameOverElement) this.gameOverElement.classList.remove('hidden');
     }
 }
 
-// Inicia o jogo ou quando o DOM estiver pronto ou agora se já estiver
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
+// Inicialização robusta
+window.onload = () => {
     new Numpuz();
-} else {
-    document.addEventListener('DOMContentLoaded', () => {
-        new Numpuz();
-    });
-}
+};
