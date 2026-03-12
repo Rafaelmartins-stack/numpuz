@@ -1,312 +1,170 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const nextCanvas = document.getElementById('nextCanvas');
-const nextCtx = nextCanvas.getContext('2d');
-const scoreElement = document.getElementById('score');
-const highScoreElement = document.getElementById('high-score');
-const gameOverScreen = document.getElementById('game-over');
-const finalScoreElement = document.getElementById('final-score');
-const restartBtn = document.getElementById('restart-btn');
+class Numpuz {
+    constructor() {
+        this.gridElement = document.getElementById('puzzle-grid');
+        this.moveElement = document.getElementById('move-count');
+        this.timerElement = document.getElementById('timer');
+        this.restartBtn = document.getElementById('restart-btn');
+        this.gameOverElement = document.getElementById('game-over');
+        this.finalMovesElement = document.getElementById('final-moves');
+        this.finalTimeElement = document.getElementById('final-time');
+        
+        this.size = 3;
+        this.tiles = [];
+        this.moves = 0;
+        this.timer = 0;
+        this.timerInterval = null;
+        this.isGameActive = false;
 
-const ROWS = 18;
-const COLS = 12;
-const BLOCK_SIZE = canvas.width / COLS;
-
-let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-let score = 0;
-let highScore = localStorage.getItem('gridstack_highscore') || 0;
-let gameOver = false;
-let currentPiece = null;
-let nextPiece = null;
-let dropCounter = 0;
-let dropInterval = 1000;
-let lastTime = 0;
-
-highScoreElement.innerText = highScore;
-
-const SHAPES = {
-    'I': { shape: [[1, 1, 1, 1]], color: '#00f2ff' },
-    'J': { shape: [[1, 0, 0], [1, 1, 1]], color: '#0070ff' },
-    'L': { shape: [[0, 0, 1], [1, 1, 1]], color: '#ff8c00' },
-    'O': { shape: [[1, 1], [1, 1]], color: '#f0ff00' },
-    'S': { shape: [[0, 1, 1], [1, 1, 0]], color: '#00ff40' },
-    'T': { shape: [[0, 1, 0], [1, 1, 1]], color: '#7000ff' },
-    'Z': { shape: [[1, 1, 0], [0, 1, 1]], color: '#ff0040' },
-    'DOT': { shape: [[1]], color: '#ffffff' },
-    'LINE3': { shape: [[1, 1, 1]], color: '#00f2ff' },
-    'SQUARE3': { shape: [[1, 1, 1], [1, 1, 1], [1, 1, 1]], color: '#ff00ff' }
-};
-
-const SHAPE_KEYS = Object.keys(SHAPES);
-
-function createPiece() {
-    const key = SHAPE_KEYS[Math.floor(Math.random() * SHAPE_KEYS.length)];
-    const piece = JSON.parse(JSON.stringify(SHAPES[key]));
-    return {
-        ...piece,
-        pos: { x: Math.floor(COLS / 2) - Math.floor(piece.shape[0].length / 2), y: 0 }
-    };
-}
-
-function drawBlock(ctx, x, y, color, size = BLOCK_SIZE) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x * size, y * size, size, size);
-    
-    // Add some highlights/borders for depth
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x * size, y * size, size, size);
-    
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.fillRect(x * size, y * size, size, size / 4);
-}
-
-function drawGrid() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw background grid lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= COLS; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * BLOCK_SIZE, 0);
-        ctx.lineTo(i * BLOCK_SIZE, canvas.height);
-        ctx.stroke();
-    }
-    for (let i = 0; i <= ROWS; i++) {
-        ctx.beginPath();
-        ctx.moveTo(0, i * BLOCK_SIZE);
-        ctx.lineTo(canvas.width, i * BLOCK_SIZE);
-        ctx.stroke();
+        this.init();
     }
 
-    grid.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value) {
-                drawBlock(ctx, x, y, value);
-            }
+    init() {
+        // Difficulty buttons
+        const diffButtons = document.querySelectorAll('.diff-btn');
+        diffButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                diffButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.size = parseInt(btn.dataset.size);
+                this.resetGame();
+            });
         });
-    });
-}
 
-function drawPiece(ctx, piece, offset = { x: 0, y: 0 }, size = BLOCK_SIZE) {
-    piece.shape.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                drawBlock(ctx, piece.pos.x + x + offset.x, piece.pos.y + y + offset.y, piece.color, size);
-            }
-        });
-    });
-}
+        this.restartBtn.addEventListener('click', () => this.resetGame());
+        this.resetGame();
+    }
 
-function collide(grid, piece) {
-    const [m, o] = [piece.shape, piece.pos];
-    for (let y = 0; y < m.length; ++y) {
-        for (let x = 0; x < m[y].length; ++x) {
-            if (m[y][x] !== 0 &&
-               (grid[y + o.y] && grid[y + o.y][x + o.x]) !== null) {
-                return true;
-            }
-            // Check bounds
-            if (m[y][x] !== 0 && (x + o.x < 0 || x + o.x >= COLS || y + o.y >= ROWS)) {
-                return true;
-            }
+    resetGame() {
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        this.moves = 0;
+        this.timer = 0;
+        this.isGameActive = true;
+        this.updateStats();
+        this.gameOverElement.classList.add('hidden');
+        
+        this.createBoard();
+        this.shuffleBoard();
+        this.renderBoard();
+        this.startTimer();
+    }
+
+    createBoard() {
+        this.tiles = [];
+        const totalTiles = this.size * this.size;
+        for (let i = 1; i < totalTiles; i++) {
+            this.tiles.push(i);
         }
+        this.tiles.push(null); // Empty space
     }
-    return false;
-}
 
-function merge(grid, piece) {
-    piece.shape.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                grid[y + piece.pos.y][x + piece.pos.x] = piece.color;
-            }
-        });
-    });
-    score += 10; // Point for positioning
-    updateScore();
-}
+    shuffleBoard() {
+        // To guarantee solvability, we simulate random valid moves
+        // instead of a truly random shuffle.
+        let emptyIndex = this.tiles.indexOf(null);
+        const iterations = this.size * this.size * 50;
 
-function clearLines() {
-    let rowsToClear = [];
-    let colsToClear = [];
-
-    // Check rows
-    for (let y = 0; y < ROWS; y++) {
-        if (grid[y].every(cell => cell !== null)) {
-            rowsToClear.push(y);
+        for (let i = 0; i < iterations; i++) {
+            const neighbors = this.getNeighbors(emptyIndex);
+            const moveIndex = neighbors[Math.floor(Math.random() * neighbors.length)];
+            
+            // Swap
+            [this.tiles[emptyIndex], this.tiles[moveIndex]] = [this.tiles[moveIndex], this.tiles[emptyIndex]];
+            emptyIndex = moveIndex;
         }
     }
 
-    // Check columns
-    for (let x = 0; x < COLS; x++) {
-        let full = true;
-        for (let y = 0; y < ROWS; y++) {
-            if (grid[y][x] === null) {
-                full = false;
-                break;
+    getNeighbors(index) {
+        const neighbors = [];
+        const row = Math.floor(index / this.size);
+        const col = index % this.size;
+
+        if (row > 0) neighbors.push(index - this.size); // Up
+        if (row < this.size - 1) neighbors.push(index + this.size); // Down
+        if (col > 0) neighbors.push(index - 1); // Left
+        if (col < this.size - 1) neighbors.push(index + 1); // Right
+
+        return neighbors;
+    }
+
+    renderBoard() {
+        if (!this.gridElement) return;
+        this.gridElement.innerHTML = '';
+        this.gridElement.style.display = 'grid';
+        this.gridElement.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
+        this.gridElement.style.gridTemplateRows = `repeat(${this.size}, 1fr)`;
+        this.gridElement.style.gap = '10px';
+        this.gridElement.style.width = '100%';
+        this.gridElement.style.height = '100%';
+
+        this.tiles.forEach((value, index) => {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            if (value === null) {
+                tile.classList.add('empty');
+                tile.textContent = '';
+            } else {
+                tile.textContent = value;
+                tile.addEventListener('click', () => this.handleTileClick(index));
+            }
+            this.gridElement.appendChild(tile);
+        });
+    }
+
+    handleTileClick(index) {
+        if (!this.isGameActive) return;
+
+        const emptyIndex = this.tiles.indexOf(null);
+        const neighbors = this.getNeighbors(index);
+
+        if (neighbors.includes(emptyIndex)) {
+            // Move tile
+            [this.tiles[index], this.tiles[emptyIndex]] = [this.tiles[emptyIndex], this.tiles[index]];
+            this.moves++;
+            this.updateStats();
+            this.renderBoard();
+
+            if (this.checkWin()) {
+                this.endGame();
             }
         }
-        if (full) {
-            colsToClear.push(x);
+    }
+
+    checkWin() {
+        for (let i = 0; i < this.tiles.length - 1; i++) {
+            if (this.tiles[i] !== i + 1) return false;
+        }
+        return this.tiles[this.tiles.length - 1] === null;
+    }
+
+    updateStats() {
+        if (this.moveElement) this.moveElement.textContent = this.moves;
+        if (this.timerElement) {
+            const mins = Math.floor(this.timer / 60);
+            const secs = this.timer % 60;
+            this.timerElement.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
     }
 
-    const lines = rowsToClear.length;
-    const cols = colsToClear.length;
-
-    if (lines > 0 || cols > 0) {
-        // Clearing logic: unlike tetris, we just set to null, no falling
-        rowsToClear.forEach(y => {
-            for (let x = 0; x < COLS; x++) grid[y][x] = null;
-        });
-        colsToClear.forEach(x => {
-            for (let y = 0; y < ROWS; y++) grid[y][x] = null;
-        });
-
-        // Score: (Lines + Columns) * 100 * Multiplier
-        // Combo: If lines > 0 AND cols > 0, extra bonus
-        let bonus = (lines > 0 && cols > 0) ? 500 : 0;
-        let points = (lines + cols) * 100 + bonus;
-        score += points;
-        updateScore();
-    }
-}
-
-function updateScore() {
-    scoreElement.innerText = score;
-    if (score > highScore) {
-        highScore = score;
-        highScoreElement.innerText = highScore;
-        localStorage.setItem('gridstack_highscore', highScore);
-    }
-}
-
-function drop() {
-    currentPiece.pos.y++;
-    if (collide(grid, currentPiece)) {
-        currentPiece.pos.y--;
-        merge(grid, currentPiece);
-        clearLines();
-        resetPiece();
-    }
-    dropCounter = 0;
-}
-
-function move(dir) {
-    currentPiece.pos.x += dir;
-    if (collide(grid, currentPiece)) {
-        currentPiece.pos.x -= dir;
-    }
-}
-
-function rotateMatrix(matrix, dir) {
-    // Transposta
-    let newMatrix = matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
-    // Inverter para direção
-    if (dir > 0) {
-        return newMatrix.map(row => row.reverse()); // Horário
-    } else {
-        return newMatrix.reverse(); // Anti-horário
-    }
-}
-
-function playerRotate(dir) {
-    const pos = currentPiece.pos.x;
-    let offset = 1;
-    const oldShape = currentPiece.shape;
-    currentPiece.shape = rotateMatrix(currentPiece.shape, dir);
-    
-    // Verificar colisão após rotação e tentar ajustar posição
-    while (collide(grid, currentPiece)) {
-        currentPiece.pos.x += offset;
-        offset = -(offset + (offset > 0 ? 1 : -1));
-        if (offset > currentPiece.shape[0].length + 1) {
-            currentPiece.shape = oldShape;
-            currentPiece.pos.x = pos;
-            return;
-        }
-    }
-}
-
-function resetPiece() {
-    currentPiece = nextPiece;
-    nextPiece = createPiece();
-    
-    if (collide(grid, currentPiece)) {
-        gameOver = true;
-        showGameOver();
-    }
-    drawNextPiece();
-}
-
-function drawNextPiece() {
-    nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
-    const size = 25;
-    const offsetX = (nextCanvas.width - nextPiece.shape[0].length * size) / 2 / size;
-    const offsetY = (nextCanvas.height - nextPiece.shape.length * size) / 2 / size;
-    
-    nextPiece.shape.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if (value !== 0) {
-                drawBlock(nextCtx, x + offsetX, y + offsetY, nextPiece.color, size);
+    startTimer() {
+        this.timerInterval = setInterval(() => {
+            if (this.isGameActive) {
+                this.timer++;
+                this.updateStats();
             }
-        });
-    });
-}
-
-function showGameOver() {
-    gameOverScreen.classList.remove('hidden');
-    finalScoreElement.innerText = score;
-}
-
-function update(time = 0) {
-    if (gameOver) return;
-
-    const deltaTime = time - lastTime;
-    lastTime = time;
-
-    dropCounter += deltaTime;
-    if (dropCounter > dropInterval) {
-        drop();
+        }, 1000);
     }
 
-    drawGrid();
-    drawPiece(ctx, currentPiece);
-    requestAnimationFrame(update);
+    endGame() {
+        this.isGameActive = false;
+        clearInterval(this.timerInterval);
+        
+        if (this.finalMovesElement) this.finalMovesElement.textContent = this.moves;
+        if (this.finalTimeElement) this.finalTimeElement.textContent = this.timerElement.textContent;
+        if (this.gameOverElement) this.gameOverElement.classList.remove('hidden');
+    }
 }
 
-document.addEventListener('keydown', event => {
-    if (gameOver) return;
-    
-    if (event.keyCode === 37) { // Seta Esquerda
-        move(-1);
-    } else if (event.keyCode === 39) { // Seta Direita
-        move(1);
-    } else if (event.keyCode === 40) { // Seta Baixo
-        drop();
-    } else if (event.keyCode === 81) { // Tecla Q (Girar Anti-horário)
-        playerRotate(-1);
-    } else if (event.keyCode === 69) { // Tecla E (Girar Horário)
-        playerRotate(1);
-    }
+// Start game
+document.addEventListener('DOMContentLoaded', () => {
+    new Numpuz();
 });
-
-restartBtn.addEventListener('click', () => {
-    grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-    score = 0;
-    gameOver = false;
-    updateScore();
-    gameOverScreen.classList.add('hidden');
-    init();
-    update();
-});
-
-function init() {
-    nextPiece = createPiece();
-    resetPiece();
-}
-
-init();
-update();

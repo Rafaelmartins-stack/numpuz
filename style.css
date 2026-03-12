@@ -78,9 +78,10 @@ header .accent {
 }
 
 main {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 40px;
+    align-items: start;
 }
 
 .grid-wrapper {
