@@ -11,7 +11,9 @@ class Numpuz {
         this.finalMovesElement = document.getElementById('final-moves');
         this.finalTimeElement = document.getElementById('final-time');
         
-        this.size = 7; // Agora 7x7
+        this.phases = [3, 5, 7];
+        this.currentPhase = 0;
+        this.size = this.phases[this.currentPhase];
         this.tiles = [];
         this.moves = 0;
         this.timer = 0;
@@ -27,22 +29,46 @@ class Numpuz {
             this.startBtn.addEventListener('click', () => this.startGame());
         }
         if (this.restartBtn) {
-            this.restartBtn.addEventListener('click', () => this.startGame());
+            this.restartBtn.addEventListener('click', () => this.handleRestart());
         }
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 if (!this.gameStarted || !this.isGameActive) {
-                    this.startGame();
+                    if (this.gameOverElement && !this.gameOverElement.classList.contains('hidden')) {
+                        this.handleRestart();
+                    } else {
+                        this.startGame();
+                    }
                 }
             }
         });
 
+        this.updatePhaseUI();
         this.createBoard();
         this.shuffleBoard();
         this.renderBoard();
     }
 
+    handleRestart() {
+        if (this.checkWin() && this.currentPhase < this.phases.length - 1) {
+            this.currentPhase++;
+        } else if (this.checkWin() && this.currentPhase === this.phases.length - 1) {
+            this.currentPhase = 0;
+        }
+        this.startGame();
+    }
+
+    updatePhaseUI() {
+        const phaseBtn = document.querySelector('.diff-btn');
+        if (phaseBtn) {
+            phaseBtn.textContent = `Fase ${this.currentPhase + 1}: ${this.size}x${this.size}`;
+        }
+        const modeTitle = document.querySelector('.difficulty-card h3');
+        if (modeTitle) modeTitle.textContent = "PROGRESSO";
+    }
+
     startGame() {
+        this.size = this.phases[this.currentPhase];
         this.gameStarted = true;
         this.isGameActive = true;
         this.moves = 0;
@@ -51,6 +77,7 @@ class Numpuz {
         if (this.startScreen) this.startScreen.classList.add('hidden');
         if (this.gameOverElement) this.gameOverElement.classList.add('hidden');
         
+        this.updatePhaseUI();
         this.createBoard();
         this.shuffleBoard();
         this.renderBoard();
@@ -98,11 +125,12 @@ class Numpuz {
         this.gridElement.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
         this.gridElement.style.gridTemplateRows = `repeat(${this.size}, 1fr)`;
         
+        const fontSizeMap = { 3: '3.5rem', 5: '2rem', 7: '1.1rem' };
+        
         this.tiles.forEach((value, index) => {
             const tile = document.createElement('div');
             tile.className = 'tile';
-            // Ajuste de fonte para grid 7x7
-            tile.style.fontSize = '1.1rem'; 
+            tile.style.fontSize = fontSizeMap[this.size] || '1.1rem'; 
             
             if (value === null) {
                 tile.classList.add('empty');
@@ -158,8 +186,26 @@ class Numpuz {
         this.isGameActive = false;
         this.gameStarted = false;
         clearInterval(this.timerInterval);
+        
         if (this.finalMovesElement) this.finalMovesElement.textContent = this.moves;
         if (this.finalTimeElement) this.finalTimeElement.textContent = this.timerElement.textContent;
+        
+        const isWin = this.checkWin();
+        const title = this.gameOverElement.querySelector('h2');
+        
+        if (isWin) {
+            if (this.currentPhase < this.phases.length - 1) {
+                title.innerHTML = `FASE <span class="accent">${this.currentPhase + 1}</span> CONCLUÍDA!`;
+                if (this.restartBtn) this.restartBtn.textContent = "PRÓXIMA FASE";
+            } else {
+                title.innerHTML = `<span class="accent">MESTRE DO PUZZLE!</span>`;
+                if (this.restartBtn) this.restartBtn.textContent = "RECOMEÇAR TUDO";
+            }
+        } else {
+            title.textContent = "FIM DE JOGO";
+            if (this.restartBtn) this.restartBtn.textContent = "TENTAR NOVAMENTE";
+        }
+
         if (this.gameOverElement) this.gameOverElement.classList.remove('hidden');
     }
 }
